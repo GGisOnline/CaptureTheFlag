@@ -50,7 +50,7 @@ in
     Map = [[1 1 1 0 0 0 0 0 0 0 0 0]
            [1 1 1 0 0 0 0 0 0 0 0 0]
            [0 0 0 0 0 0 0 0 0 0 0 0]
-           [0 0 0 3 3 0 0 3 3 0 0 0]
+           [0 0 0 3 3 3 3 3 3 0 0 0]
            [0 0 0 3 0 0 0 0 3 0 0 0]
            [0 0 0 0 0 0 0 0 0 0 0 0]
 %           [0 0 0 0 0 0 0 0 0 0 0 0]
@@ -74,8 +74,10 @@ in
 
 %%%% Thinking parameters %%%%
 
-    ThinkMin = 450
-    ThinkMax = 500
+    %ThinkMin = 450
+    %ThinkMax = 500
+    ThinkMin = 50
+    ThinkMax = 200
 
 %%%% Food apparition parameters %%%%
 

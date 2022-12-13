@@ -107,20 +107,37 @@ in
     fun {InitPosition State ?ID ?Position}
         ID = State.id
         Position = State.startPosition
-        {System.show Position}
         State
     end
 
-    fun {Move State ?ID ?Position} X Y X1 Y1 in
-        State.position = pt(x:X y:Y)
-        {System.show [X Y]}
-        if Y==MapHeight then
-            X1 = (X mod MapWidth) + 1
-        else
-            X1 = X
+    fun {Move State ?ID ?Position}
+        proc {ChooseDirection XDiff YDiff} V in
+            V = {OS.rand} mod 4
+            if V > 1 then
+                XDiff = 0
+                YDiff = (V mod 2) * 2 - 1
+            else
+                XDiff = (V mod 2) * 2 - 1
+                YDiff = 0
+            end
         end
-        Y1 = (Y mod MapHeight) + 1
-        Position = pt(x:X1 y:Y1)
+        fun {IsValidPosition X Y}
+            if X >= 1 andthen Y >= 1 andthen Y =< MapHeight andthen X =< MapWidth
+                        andthen {List.nth {List.nth Input.map X} Y} \= 3 then
+                true
+            else
+                false
+            end
+        end
+        X Y XDiff YDiff
+    in
+        {ChooseDirection XDiff YDiff}
+        State.position = pt(x:X y:Y)
+        if {IsValidPosition X+XDiff Y+YDiff} then
+            Position = pt(x:X+XDiff y:Y+YDiff)
+        else
+            Position = pt(x:X y:Y)
+        end
         {SetPosition State Position}
     end
 

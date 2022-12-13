@@ -37,12 +37,12 @@ in
         %{System.show startOfLoop(ID)}
 
         %%%% TODO Insert your code here
-        if ID.id==5 then
+        %if ID.id==5 then
+            {SimulatedThinking}
             {Send Port move(ID Position)}
             {Send WindowPort moveSoldier(ID Position)}
-            skip
-        end
-        {Delay 50}
+        %    skip
+        %end
 
         %{System.show endOfLoop(ID)}
         {Main Port ID State}
