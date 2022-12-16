@@ -2,6 +2,7 @@ functor
 import
 	QTk at 'x-oz://system/wp/QTk.ozf'
 	Input
+	OS
 	System
 export
 	portWindow:StartWindow
@@ -36,6 +37,12 @@ define
 	StateModification
 
 	UpdateLife
+
+	CD = {OS.getCWD}
+
+%%%%% Wall Picture
+	%WallTile = {QTk.newImage photo(file:CD#'/pictures/Wall.png')}
+
 in
 
 %%%%% Build the initial window and set it up (call only once)

@@ -182,11 +182,11 @@ in
     end
 
     fun {SayDeath State ID}
-        State
+        if State.id == ID then {AdjoinList State [life#0]} else State end
     end
 
     fun {SayDamageTaken State ID Damage LifeLeft}
-        State
+        if State.id == ID then {AdjoinList State [hp#LifeLeft]} else State end
     end
 
     fun {TakeFlag State ?ID ?Flag}

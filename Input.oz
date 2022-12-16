@@ -76,8 +76,8 @@ in
 
     %ThinkMin = 450
     %ThinkMax = 500
-    ThinkMin = 50
-    ThinkMax = 200
+    ThinkMin = 100
+    ThinkMax = 1000
 
 %%%% Food apparition parameters %%%%
 
@@ -87,6 +87,12 @@ in
 %%%% Charges
     GunCharge = 1
     MineCharge = 5
+
+%%%% Distances of hit
+    %MinDistanceMine = 1
+    %MaxDistanceMine = 2
+    %MinDistanceGun = 1
+    %MaxDistanceGun = 2
 
 %%%% Respawn
     RespawnDelay = 25000
