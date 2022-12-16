@@ -41,58 +41,8 @@ define
     SetPosition
 
     %Other Functions
-    Abs 
-    ManathanDistance
-    RandomInRange = fun {$ Min Max} Min+({OS.rand}mod(Max-Min+1)) end
+    RandomInRange = fun {$ Min Max} Min+({OS.rand}mod(Max-Min+1)) end 
 
-
-    fun{StartPlayer Color ID}
-        Stream
-        Port
-    in
-        {NewPort Stream Port}
-        thread
-            {TreatStream Stream state(
-                                    id:id(id:ID color:Color name:player001random) 
-                                    position:{List.nth Input.spawnPoints ID})}
-                                    map:Input.map
-                                    hp:Input.startHealth
-                                    flag:null
-                                    mineReloads:0
-                                    gunReloads:0
-                                    startPosition:{List.nth Input.spawnPoints ID}
-        end
-        Port
-    end
-
-
-    proc{TreatStream Strream State}
-        case Stream
-            of H|T then {TreatStream T {MatchHead H State}}
-        end
-    end
-
-    fun{MatchHead Head State}
-        case Head 
-            of initPosition(?ID ?Position) then {InitPosition State ID Position}
-            [] move(?ID ?Position) then {Move State ID Position}
-            [] sayMoved(ID Position) then {SayMoved State ID Position}
-            [] sayMineExplode(Mine) then {SayMineExplode State Mine}
-            [] sayFoodAppeared(Food) then {SayFoodAppeared State Food}
-            [] sayFoodEaten(ID Food) then {SayFoodEaten State ID Food}
-            [] chargeItem(?ID ?Kind) then {ChargeItem State ID Kind}
-            [] sayCharge(ID Kind) then {SayCharge State ID Kind}
-            [] fireItem(?ID ?Kind) then {FireItem State ID Kind}
-            [] sayMinePlaced(ID Mine) then {SayMinePlaced State ID Mine}
-            [] sayShoot(ID Position) then {SayShoot State ID Position}
-            [] sayDeath(ID) then {SayDeath State ID}
-            [] sayDamageTaken(ID Damage LifeLeft) then {SayDamageTaken State ID Damage LifeLeft}
-            [] takeFlag(?ID ?Flag) then {TakeFlag State ID Flag}
-            [] dropFlag(?ID ?Flag) then {DropFlag State ID Flag}
-            [] sayFlagTaken(ID Flag) then {SayFlagTaken State ID Flag}
-            [] sayFlagDropped(ID Flag) then {SayFlagDropped State ID flag}
-        end
-    end
 
     fun {Abs X}
         if X < 0 then ~X else X end
@@ -114,25 +64,60 @@ define
         end
     end
 
-    fun {ModifyMap Map Position Value}
-        local MapIndex in 
-            MapIndex={PosToIndex Position}
-            {List.mapInd Map fun {$ I A} if I == MapIndex then value else A end end}
-        end
-    end
-
-    fun {Filter L Fun}
-        fun {Inner L Fun Acc}
-            case L
-                of nil then if Acc == nil then nil else {List.reverse Acc} end
-                [] H|T then if {Fun H} then {Inner T Fun H|Acc} else {Inner T Fun Acc} end
-            end
-        end
-    in
-        {Inner L Fun nil}
-    end
-
 in
+
+    fun {StartPlayer Color ID}
+        Stream
+        Port
+    in
+        {NewPort Stream Port}
+        thread
+            {TreatStream 
+                Stream 
+                state(
+                    id:id(id:ID color:Color name:player001random) 
+                    position:{List.nth Input.spawnPoints ID}
+                    map:Input.map
+                    hp:Input.startHealth
+                    flag:null
+                    mineReloads:0
+                    gunReloads:0
+                    startPosition:{List.nth Input.spawnPoints ID}
+                )
+            }
+        end
+        Port
+    end
+
+
+    proc{TreatStream Stream State}
+        case Stream
+            of H|T then {TreatStream T {MatchHead H State}}
+        end
+    end
+
+    fun{MatchHead Head State}
+        case Head 
+            of initPosition(?ID ?Position) then {InitPosition State ID Position}
+            [] move(?ID ?Position ?Direction) then {Move State ID Position Direction}
+            [] sayMoved(ID Position Direction) then {SayMoved State ID Position Direction}
+            [] sayMineExplode(Mine) then {SayMineExplode State Mine}
+            [] sayFoodAppeared(Food) then {SayFoodAppeared State Food}
+            [] sayFoodEaten(ID Food) then {SayFoodEaten State ID Food}
+            [] chargeItem(?ID ?Kind) then {ChargeItem State ID Kind}
+            [] sayCharge(ID Kind) then {SayCharge State ID Kind}
+            [] fireItem(?ID ?Kind) then {FireItem State ID Kind}
+            [] sayMinePlaced(ID Mine) then {SayMinePlaced State ID Mine}
+            [] sayShoot(ID Position) then {SayShoot State ID Position}
+            [] sayDeath(ID) then {SayDeath State ID}
+            [] sayDamageTaken(ID Damage LifeLeft) then {SayDamageTaken State ID Damage LifeLeft}
+            [] takeFlag(?ID ?Flag) then {TakeFlag State ID Flag}
+            [] dropFlag(?ID ?Flag) then {DropFlag State ID Flag}
+            [] sayFlagTaken(ID Flag) then {SayFlagTaken State ID Flag}
+            [] sayFlagDropped(ID Flag) then {SayFlagDropped State ID flag}
+        end
+    end
+
 
     %% State Setters
     fun {SetPosition State Position}
@@ -155,11 +140,11 @@ in
                 local Point in
                     case Direction
                         of south then 
-                            if State.position.xx == Input.nColumn then {TempMove west}
+                            if State.position.x == Input.nColumn then {TempMove west}
                             else 
                                 Point = pt(x:State.position.x+1 y:State.position.y)
                                 if {List.nth State.map {PosToIndex Point}} == 0 then
-                                    r(pos:Point dir:south)
+                                    {SetPosition State Point}
                                 else {TempMove west}
                                 end
                             end
@@ -168,7 +153,7 @@ in
                             else 
                                 Point = pt(x:State.position.x y:State.position.y-1)
                                 if {List.nth State.map {PosToIndex Point}} == 0 then
-                                    r(pos:Point dir:west)
+                                    {SetPosition State Point}
                                 else {TempMove north}
                                 end
                             end
@@ -177,18 +162,18 @@ in
                             else 
                                 Point = pt(x:State.position.x-1 y:State.position.y)
                                 if {List.nth State.map {PosToIndex Point}} == 0 then
-                                    r(pos:Point dir:north)
+                                    {SetPosition State Point}
                                 else {TempMove east}
                                 end
                             end
                         [] east then
-                            if State.position.y == Input.nRow then r(pos:State.position dir:surface)
+                            if State.position.y == Input.nRow then {SetPosition State Point}
                             else
                                 Point = pt(x:State.position.x y:State.position.y+1)
                                 if {List.nth State.map {PosToIndex Point}} == 0 then
-                                    r(pos:Point dir:east)
+                                    {SetPosition State Point}
                                 else
-                                    r(pos:State.position dir:surface)
+                                    {SetPosition State Point}
                                 end
                             end
                     
@@ -201,7 +186,74 @@ in
             Temp = {TempMove south}
             Position = Temp.pos
             Direction = Temp.dir
-            {AdjoinList State [position#Temp.pos direction#Temp.dir map#{ModifyMap State.map Temp.pos x}]}
         end
+    end
+
+    fun {SayMoved State ID Position Direction}
+        State
+    end
+
+    fun {SayMineExplode State Mine}
+        State
+    end
+
+    fun {SayFoodAppeared State Food}
+        State
+    end
+
+    fun {SayFoodEaten State ID Food}
+        State
+    end
+
+    fun {ChargeItem State ?ID ?Kind} 
+        ID = State.id
+        Kind = null
+        State
+    end
+
+    fun {SayCharge State ID Kind}
+        State
+    end
+
+    fun {FireItem State ?ID ?Kind}
+        ID = State.id
+        Kind = null
+        State
+    end
+
+    fun {SayMinePlaced State ID Mine}
+        State
+    end
+
+    fun {SayShoot State ID Position}
+        State
+    end
+
+    fun {SayDeath State ID}
+        State
+    end
+
+    fun {SayDamageTaken State ID Damage LifeLeft}
+        State
+    end
+
+    fun {TakeFlag State ?ID ?Flag}
+        ID = State.id
+        Flag = null
+        State
+    end
+            
+    fun {DropFlag State ?ID ?Flag}
+        ID = State.id
+        Flag = null
+        State
+    end
+
+    fun {SayFlagTaken State ID Flag}
+        State
+    end
+
+    fun {SayFlagDropped State ID Flag}
+        State
     end
 end

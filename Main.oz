@@ -34,16 +34,14 @@ in
     SimulatedThinking = proc{$} {Delay ({OS.rand} mod (Input.thinkMax - Input.thinkMin) + Input.thinkMin)} end
 
     proc {Main Port ID State} Position in
-        %{System.show startOfLoop(ID)}
 
         %%%% TODO Insert your code here
-        %if ID.id==5 then
-            {SimulatedThinking}
-            {Send Port move(ID Position)}
-            {Send WindowPort moveSoldier(ID Position)}
-        %    skip
-        %end
 
+        {SimulatedThinking}
+        {Send Port move(ID Position)}
+        {Send WindowPort moveSoldier(ID Position)}
+
+        {Delay 500}
         %{System.show endOfLoop(ID)}
         {Main Port ID State}
     end
