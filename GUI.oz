@@ -165,7 +165,7 @@ in
 		fun{$ Grid State}
 			ID HandleScore Handle Flag LabelFlag HandleFlag X Y Flag Mine Food
 		in
-			{System.show drawFlag|Color}
+			%{System.show drawFlag|Color}
 			guiSoldier(id:ID score:HandleScore soldier:Handle mines:Mine flags:Flag foods:Food) = State
 			pt(x:X y:Y) = Position
 			LabelFlag = label(text:"F" handle:HandleFlag borderwidth:5 relief:raised bg:Color ipadx:5 ipady:5)
@@ -209,7 +209,7 @@ in
 		end
 	in
 		fun{RemoveMine Position}
-			{System.show removeMine(Position)}
+			%{System.show removeMine(Position)}
 			fun{$ Grid State}
 				ID HandleScore Handle Mine NewMine Flag Food
 			in
@@ -235,7 +235,7 @@ in
 		end
 	in
 		fun{RemoveFood Position}
-			{System.show removeFood(Position)}
+			%{System.show removeFood(Position)}
 			fun{$ Grid State}
 				ID HandleScore Handle Food NewFood Mine Flag
 			in
@@ -261,7 +261,7 @@ in
 		end
 	in
 		fun{RemoveFlag Position}
-			{System.show removeFlag(Position)}
+			%{System.show removeFlag(Position)}
 			fun{$ Grid State}
 				ID HandleScore Handle Mine NewFlag Flag Food
 			in

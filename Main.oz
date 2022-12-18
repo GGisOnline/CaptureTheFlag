@@ -13,8 +13,11 @@ define
    SimulatedThinking
    GetFlag
    IsDead
+   ProcessCommonStream
    Main
    WindowPort
+   CommonPort
+   CommonStream
 
    proc {DrawFlags Flags Port}
       case Flags of nil then skip 
@@ -60,7 +63,7 @@ in
       false
    end
 
-   proc {Main Port ID State} Position F Flag in
+   proc {Main Port ID State} Position Flags F Flag OldFlag in
 
       if {IsDead Port ID State} then
          % do things for dead players
@@ -70,24 +73,106 @@ in
       end
 
       {SimulatedThinking}
-      %{System.show State.flags}
       {Send Port move(ID Position)}
       {SendToAll sayMoved(ID Position)}
       {Send WindowPort moveSoldier(ID Position)}
 
       % Flags
-      F = {GetFlag State.flags Position}
-      {Send Port takeFlag(ID Flag)}
-      if Flag \= null andthen F \= nil then
-         {SendToAll sayFlagTaken(ID F)}
-         {Send WindowPort removeFlag(F)}
-      else
-         skip
+      {Send State.commonPort getFlag(ID OldFlag)}
+      if OldFlag \= null then NewFlag in % does the player have a flag
+         {Send Port dropFlag(ID Flag)}
+         if Flag == null then   % the player wants to drop the flag
+            {Send State.commonPort unlinkFlag(ID)}
+         else
+            NewFlag = flag(pos:Position color:OldFlag.color)
+            {Send State.commonPort moveFlag(OldFlag NewFlag)}
+            {Send WindowPort removeFlag(OldFlag)}
+            {Send WindowPort putFlag(NewFlag)}
+         end
+      else                      % the player has no flag
+         {Send State.commonPort getFlags(Flags)}
+         F = {GetFlag Flags Position}
+         if F \= nil then       % is there a flag
+            {Send Port takeFlag(ID Flag)}
+            if Flag \= null then % does the player wants a flag
+               {Send State.commonPort pair(ID F)}
+               {SendToAll sayFlagTaken(ID F)}
+               {Send WindowPort removeFlag(F)}
+               {Send WindowPort putFlag(F)}
+            else
+               skip
+            end
+         else
+            skip
+         end
       end
 
-      {Delay 500}
+%      {Delay 500}
         %{System.show endOfLoop(ID)}
       {Main Port ID State}
+   end
+
+   proc {ProcessCommonStream CommonStream Flags FlagPairs}
+      fun {GetFlag L K}
+         case L
+         of flagpair(K1 V)|T then
+            if K==K1 then V
+            else {GetFlag T K} end
+         [] nil then null end
+      end
+      fun {Insert L K V}
+         case L
+         of H|T then
+            if H==K then
+               flagpair(K V)|T
+            else
+               H|{Insert T K V}
+            end
+         [] nil then
+            [flagpair(K V)]
+         end
+      end
+      fun {ReplaceFlag L Old New}
+         case L
+         of H|T then
+            if H==Old then New|T
+            else H|{ReplaceFlag T Old New} end
+         [] nil then nil end
+      end
+      fun {ReplaceFlagPair L Old New}
+         case L
+         of flagpair(K V)|T then
+            if V==Old then flagpair(K New)|T
+            else flagpair(K V)|{ReplaceFlagPair T Old New} end
+         [] nil then nil end
+      end
+      fun {Delete L K}
+         case L
+         of flagpair(K1 V)|T then
+            if K==K1 then T
+            else flagpair(K1 V)|{Delete T K} end
+         [] nil then nil end
+      end
+   in
+      case CommonStream.1
+      of getFlags(F) then
+         F=Flags
+         {ProcessCommonStream CommonStream.2 Flags FlagPairs}
+      [] pair(ID Flag) then
+         {ProcessCommonStream CommonStream.2 Flags {Insert FlagPairs ID Flag}}
+      [] unlinkFlag(ID) then
+         {ProcessCommonStream CommonStream.2 Flags {Delete FlagPairs ID}}
+      [] getFlag(ID Flag) then
+         Flag = {GetFlag FlagPairs ID}
+         {ProcessCommonStream CommonStream.2 Flags FlagPairs}
+      [] moveFlag(OldFlag NewFlag) then
+         {ProcessCommonStream CommonStream.2
+          {ReplaceFlag Flags OldFlag NewFlag}
+          {ReplaceFlagPair FlagPairs OldFlag NewFlag}}
+      else
+         {System.show processCommonStream#CommonStream.1}
+         {ProcessCommonStream CommonStream.2 Flags FlagPairs}
+      end
    end
 
    proc {InitThreadForAll Players}
@@ -100,7 +185,7 @@ in
          {Send WindowPort initSoldier(ID Position)}
          {Send WindowPort lifeUpdate(ID Input.startHealth)}
          thread
-            {Main Port ID state(mines:nil flags:Input.flags)}
+            {Main Port ID state(mines:nil flags:Input.flags commonPort:CommonPort)}
          end
          {InitThreadForAll Next}
       end
@@ -117,6 +202,10 @@ in
         % Create port for players
       PlayersPorts = {DoListPlayer Input.players Input.colors 1}
 
+      {NewPort CommonStream CommonPort}
       {InitThreadForAll PlayersPorts}
+      thread
+         {ProcessCommonStream CommonStream Input.flags nil}
+      end
    end
 end

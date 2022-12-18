@@ -62,10 +62,7 @@ in
              mineReloads:0
              gunReloads:0
              startPosition:{List.nth Input.spawnPoints ID}
-             players:nil
-                    % TODO You can add more elements if you need it
-             )
-         }
+             players:nil)}
       end
       Port
    end
@@ -233,7 +230,11 @@ in
    
    fun {DropFlag State ?ID ?Flag}
       ID = State.id
-      Flag = null
+      if {OS.rand} mod 10 < 2 then
+         Flag = null
+      else
+         Flag = flag(pos:_ color:_)
+      end
       State
    end
 
