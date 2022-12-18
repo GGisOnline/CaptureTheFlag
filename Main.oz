@@ -13,6 +13,7 @@ define
    SimulatedThinking
    GetFlag
    IsDead
+   IsMine
    ProcessCommonStream
    Main
    WindowPort
@@ -46,7 +47,9 @@ in
       {Rec PlayersPorts}
    end
 
-   SimulatedThinking = proc{$} {Delay ({OS.rand} mod (Input.thinkMax - Input.thinkMin) + Input.thinkMin)} end
+   proc{SimulatedThinking}
+      {Delay ({OS.rand} mod (Input.thinkMax - Input.thinkMin) + Input.thinkMin)}
+   end
 
    fun {GetFlag Flags Position}
       case Flags
@@ -63,39 +66,54 @@ in
       false
    end
 
+   fun {IsMine L P}
+      case L
+      of mine(pos:P1)|T then
+         if P1==P then
+            true
+         else
+            {IsMine T P}
+         end
+      [] nil then
+         false
+      end
+   end
+
    proc {Main Port ID State} 
       Position
       Life
       Kind
+      UseKind
       Flags
       F 
       Flag 
-      OldFlag 
+      OldFlag
+      Mines
    in
 
       {Send Port isDead(Life)}
-		{Wait Life}
+      {Wait Life}
 
-		{SimulatedThinking}
+      {SimulatedThinking}
 
-		%%%% #1 : If player is dead, we remove him and make him respawn to his base %%%%
-		if Life then
-			{Send WindowPort removeSoldier(ID)}
-			{SendToAll sayDeath(ID)}
+%%%% #1 : If player is dead, we remove him and make him respawn to his base %%%%
+      if Life then
+         {Send WindowPort removeSoldier(ID)}
+         {SendToAll sayDeath(ID)}
 			%{Respawn()} TODO MAKE PLAYER RESPAWN
-			
-		else
+         
+      else
 
 			%{System.show F} %%%% DEBUG
 
 			%{SimulatedThinking}
 
-			%%%% #2/#3 : ask where the player wants to move %%%%
+%%%% #2/#3 : ask where the player wants to move %%%%
          {Send Port move(ID Position)}
          if {Member
-            {List.nth {List.nth Input.map Position.x} Position.y}
-            [0 (((ID.id+1) mod 2)+1)]} then
-               skip
+             {List.nth {List.nth Input.map Position.x} Position.y}
+             [0 (((ID.id+1) mod 2)+1)]} then
+            skip
          else
             {Main Port ID State} % invalid move, goto start of loop
          end
@@ -103,34 +121,51 @@ in
          {Send WindowPort moveSoldier(ID Position)}
 
 
-			%%%% #4 : TODO
+%%%% #4 : check player moved on mine
+         {Send State.commonPort getMines(Mines)}
+         if {IsMine Mines Position} then Alive in
+            {Send Port sayDamageTaken(2 _)} % TODO: fix
+            {SendToAll sayMineExplode(mine(pos:Position))}
+            {Send Port isDead(Alive)}
+            {Send State.commonPort delMine(mine(pos:Position))}
+            if Alive then
+               skip
+            else
+               {SendToAll sayDeath(ID)}
+               {Main Port ID state}
+            end
+         else
+            skip
+         end
 
 
-			%{SimulatedThinking}
 
-			%%%% #5 : ask the player if he wants to reload one of his weapons %%%%
-			{Send Port chargeItem(ID Kind)}
-			{SendToAll sayCharge(ID Kind)}
-
-
-			%{SimulatedThinking}
-
-			%%%% #6 : ask the player if he wants to use one of his weapons %%%%
-			%{Send Port fireItem(ID Kind)} TODO PATCH
-         % get what player want to use as a weapon
-         %{Send Port fireItem(ID Kind)}
-         % if player can use that weapon then do
-         if false then %{CanUse ID Kind} then
-            %    notify all player uses the weapon
+%%%% #5 : ask the player if he wants to reload one of his weapons %%%%
+         {Send Port chargeItem(ID Kind)}
+         if Kind \= null then
             {SendToAll sayCharge(ID Kind)}
+         else
+            skip
+         end
+
+			%{SimulatedThinking}
+
+%%%% #6 : ask the player if he wants to use one of his weapons %%%%
+
+         {Send Port fireItem(ID UseKind)}
+         % TODO: how to tell how much charge a weapon has?
+         if false then %{CanUse ID UseKind} then
+            {SendToAll sayCharge(ID UseKind)}
             if Kind == gun then
+               % nothing to do here for the GUI
                {SendToAll sayShoot(ID Position)}
             elseif Kind == mine then
-               {SendToAll sayMinePlaced(ID Kind)}
+               {Send WindowPort putMine(mine(pos:Position))}
+               {SendToAll sayMinePlaced(ID UseKind)}
+               {Send State.commonPort addMine(mine(pos:Position))}
             else
                skip
             end
-                   
             %    reset charge counter for weapon       
             %    if mine exploded: notify all; apply damage
             %    if player shot then do: notify all
@@ -138,7 +173,7 @@ in
 
          %{SimulatedThinking}
 
-         %%%% #7 : ask the player if he wants to grab or drop flag %%%%
+%%%% #7 : ask the player if he wants to grab or drop flag %%%%
          {Send State.commonPort getFlag(ID OldFlag)}
          if OldFlag \= null then NewFlag in % does the player have a flag
             {Send Port dropFlag(ID Flag)}
@@ -184,7 +219,7 @@ in
       {Main Port ID State}
    end
 
-   proc {ProcessCommonStream CommonStream Flags FlagPairs}
+   proc {ProcessCommonStream CommonStream Flags FlagPairs Mines}
       fun {GetFlag L K}
          case L
          of flagpair(K1 V)|T then
@@ -225,25 +260,40 @@ in
             else flagpair(K1 V)|{Delete T K} end
          [] nil then nil end
       end
+      fun {DeleteMine L X}
+         case L
+         of H|T then
+            if H==X then T
+            else H|{DeleteMine T X} end
+         [] nil then nil end
+      end
    in
       case CommonStream.1
       of getFlags(F) then
          F=Flags
-         {ProcessCommonStream CommonStream.2 Flags FlagPairs}
+         {ProcessCommonStream CommonStream.2 Flags FlagPairs Mines}
       [] pair(ID Flag) then
-         {ProcessCommonStream CommonStream.2 Flags {Insert FlagPairs ID Flag}}
+         {ProcessCommonStream CommonStream.2 Flags {Insert FlagPairs ID Flag} Mines}
       [] unlinkFlag(ID) then
-         {ProcessCommonStream CommonStream.2 Flags {Delete FlagPairs ID}}
+         {ProcessCommonStream CommonStream.2 Flags {Delete FlagPairs ID} Mines}
       [] getFlag(ID Flag) then
          Flag = {GetFlag FlagPairs ID}
-         {ProcessCommonStream CommonStream.2 Flags FlagPairs}
+         {ProcessCommonStream CommonStream.2 Flags FlagPairs Mines}
       [] moveFlag(OldFlag NewFlag) then
          {ProcessCommonStream CommonStream.2
           {ReplaceFlag Flags OldFlag NewFlag}
-          {ReplaceFlagPair FlagPairs OldFlag NewFlag}}
+          {ReplaceFlagPair FlagPairs OldFlag NewFlag}
+          Mines}
+      [] getMines(M) then
+         M = Mines
+         {ProcessCommonStream CommonStream.2 Flags FlagPairs Mines}
+      [] addMine(M) then
+         {ProcessCommonStream CommonStream.2 Flags FlagPairs M|Mines}
+      [] delMine(M) then
+         {ProcessCommonStream CommonStream.2 Flags FlagPairs {DeleteMine Mines M}}
       else
          {System.show processCommonStream#CommonStream.1}
-         {ProcessCommonStream CommonStream.2 Flags FlagPairs}
+         {ProcessCommonStream CommonStream.2 Flags FlagPairs Mines}
       end
    end
 
@@ -264,20 +314,20 @@ in
    end
 
    thread
-        % Create port for window
+      % Create port for window
       WindowPort = {GUI.portWindow}
 
-        % Open window
+      % Open window
       {Send WindowPort buildWindow}
       {System.show buildWindow}
 
-        % Create port for players
+      % Create port for players
       PlayersPorts = {DoListPlayer Input.players Input.colors 1}
 
       {NewPort CommonStream CommonPort}
       {InitThreadForAll PlayersPorts}
       thread
-         {ProcessCommonStream CommonStream Input.flags nil}
+         {ProcessCommonStream CommonStream Input.flags nil nil}
       end
    end
 end
