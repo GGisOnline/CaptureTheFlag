@@ -16,10 +16,10 @@ endif
 
 # TODO: Change these parameters as you wish
 INPUT = "Input.oz"
-PLAYER1 = "PlayerBasic.oz"
-PLAYER2 = "PlayerBasic.oz"
-#PLAYER1 = "Player001Random.oz"
-#PLAYER2 = "Player001Random.oz"
+#PLAYER1 = "PlayerBasic.oz"
+#PLAYER2 = "PlayerBasic.oz"
+PLAYER1 = "Player001Random.oz"
+PLAYER2 = "Player001Random.oz"
 
 all:
 	$(OZC) -c ${INPUT} -o "Input.ozf"
