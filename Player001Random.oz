@@ -253,7 +253,7 @@ in
       Flag = flag(pos:_ color:_)
       State
    end
-   
+
    fun {DropFlag State ?ID ?Flag}
       ID = State.id
       if {OS.rand} mod 10 < 2 then
