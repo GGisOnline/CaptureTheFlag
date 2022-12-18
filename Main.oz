@@ -63,52 +63,98 @@ in
       false
    end
 
-   proc {Main Port ID State} Position Flags F Flag OldFlag in
+   proc {Main Port ID State} 
+      Position
+      Life
+      Kind
+      Flags
+      F 
+      Flag 
+      OldFlag 
+   in
 
-      if {IsDead Port ID State} then
-         % do things for dead players
-         skip
-      else
-         skip % do nothing
-      end
+      {Send Port isDead(Life)}
+		{Wait Life}
 
-      {SimulatedThinking}
-      {Send Port move(ID Position)}
-      {SendToAll sayMoved(ID Position)}
-      {Send WindowPort moveSoldier(ID Position)}
+		{SimulatedThinking}
 
-      % Flags
-      {Send State.commonPort getFlag(ID OldFlag)}
-      if OldFlag \= null then NewFlag in % does the player have a flag
-         {Send Port dropFlag(ID Flag)}
-         if Flag == null then   % the player wants to drop the flag
-            {Send State.commonPort unlinkFlag(ID)}
-         else
-            NewFlag = flag(pos:Position color:OldFlag.color)
-            {Send State.commonPort moveFlag(OldFlag NewFlag)}
-            {Send WindowPort removeFlag(OldFlag)}
-            {Send WindowPort putFlag(NewFlag)}
-         end
-      else                      % the player has no flag
-         {Send State.commonPort getFlags(Flags)}
-         F = {GetFlag Flags Position}
-         if F \= nil then       % is there a flag
-            {Send Port takeFlag(ID Flag)}
-            if Flag \= null then % does the player wants a flag
-               {Send State.commonPort pair(ID F)}
-               {SendToAll sayFlagTaken(ID F)}
-               {Send WindowPort removeFlag(F)}
-               {Send WindowPort putFlag(F)}
+		%%%% #1 : If player is dead, we remove him and make him respawn to his base %%%%
+		if Life then
+			{Send WindowPort removeSoldier(ID)}
+			{SendToAll sayDeath(ID)}
+			%{Respawn()} TODO MAKE PLAYER RESPAWN
+			
+		else
+
+			%{System.show F} %%%% DEBUG
+
+			%{SimulatedThinking}
+
+			%%%% #2/#3 : ask where the player wants to move %%%%
+			{Send Port move(ID Position)}
+			{SendToAll sayMoved(ID Position)}
+			{Send WindowPort moveSoldier(ID Position)}
+
+
+			%%%% #4 : TODO
+
+
+			%{SimulatedThinking}
+
+			%%%% #5 : ask the player if he wants to reload one of his weapons %%%%
+			{Send Port chargeItem(ID Kind)}
+			{SendToAll sayCharge(ID Kind)}
+
+
+			%{SimulatedThinking}
+
+			%%%% #6 : ask the player if he wants to use one of his weapons %%%%
+			%{Send Port fireItem(ID Kind)} TODO PATCH
+
+
+         %{SimulatedThinking}
+
+         %%%% #7 : ask the player if he wants to grab or drop flag %%%%
+         {Send State.commonPort getFlag(ID OldFlag)}
+         if OldFlag \= null then NewFlag in % does the player have a flag
+            {Send Port dropFlag(ID Flag)}
+            if Flag == null then   % the player wants to drop the flag
+               {Send State.commonPort unlinkFlag(ID)}
+            else
+               NewFlag = flag(pos:Position color:OldFlag.color)
+               {Send State.commonPort moveFlag(OldFlag NewFlag)}
+               {Send WindowPort removeFlag(OldFlag)}
+               {Send WindowPort putFlag(NewFlag)}
+            end
+         else                      % the player has no flag
+            {Send State.commonPort getFlags(Flags)}
+            F = {GetFlag Flags Position}
+            if F \= nil then
+               if F.color == ID.color then
+                  skip
+               else       % is there a flag
+                  {Send Port takeFlag(ID Flag)}
+                  if Flag \= null then % does the player wants a flag
+                     {Send State.commonPort pair(ID F)}
+                     {SendToAll sayFlagTaken(ID F)}
+                     {Send WindowPort removeFlag(F)}
+                     {Send WindowPort putFlag(F)}
+                  else
+                     skip
+                  end
+               end
             else
                skip
             end
-         else
-            skip
          end
       end
+      
 
-%      {Delay 500}
-        %{System.show endOfLoop(ID)}
+      %{Delay 500} %%%% Delay for better performances
+      
+      %{System.show endOfLoop(ID)}
+
+
       {Main Port ID State}
    end
 
