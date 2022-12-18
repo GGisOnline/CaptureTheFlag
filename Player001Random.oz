@@ -192,21 +192,22 @@ in
    end
 
    fun {ChargeItem State ?ID ?Kind} 
+      
       R
     
 	in
 
 		%%%% Check if all weapons are full %%%%
-        if State.mineReloads == Input.mineCharge andthen State.gunReloads == Input.gunCharge then
-		    ID = State.id
-		    Kind = null
-		    State
+      if State.mineReloads == Input.mineCharge andthen State.gunReloads == Input.gunCharge then
+         ID = State.id
+		   Kind = null
+		   State
         
 		else
 			if State.mineReloads == Input.mineCharge then
 				Kind = gunReloads
-                ID = State.id
-                R = State.Kind + 1 
+            ID = State.id
+            R = State.Kind + 1 
 				State
 			else
 				Kind = mineReloads
@@ -256,7 +257,7 @@ in
 
    fun {DropFlag State ?ID ?Flag}
       ID = State.id
-      if {OS.rand} mod 10 < 2 then
+      if State.hp < 1 then
          Flag = null
       else
          Flag = flag(pos:_ color:_)
