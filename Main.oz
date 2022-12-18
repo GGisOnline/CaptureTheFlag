@@ -91,9 +91,16 @@ in
 			%{SimulatedThinking}
 
 			%%%% #2/#3 : ask where the player wants to move %%%%
-			{Send Port move(ID Position)}
-			{SendToAll sayMoved(ID Position)}
-			{Send WindowPort moveSoldier(ID Position)}
+                   {Send Port move(ID Position)}
+                   if {Member
+                       {List.nth {List.nth Input.map Position.x} Position.y}
+                       [0 (ID.id+1) mod 2)+1} then
+                      skip
+                   else
+                      {Main Port ID State} % invalid move, goto start of loop
+                   end
+                   {SendToAll sayMoved(ID Position)}
+                   {Send WindowPort moveSoldier(ID Position)}
 
 
 			%%%% #4 : TODO
@@ -127,6 +134,7 @@ in
                {Send WindowPort putFlag(NewFlag)}
             end
          else                      % the player has no flag
+%            {System.show have_no_flag}
             {Send State.commonPort getFlags(Flags)}
             F = {GetFlag Flags Position}
             if F \= nil then
@@ -134,7 +142,7 @@ in
                   skip
                else       % is there a flag
                   {Send Port takeFlag(ID Flag)}
-                  if Flag \= null then % does the player wants a flag
+                  if Flag \= null then % the player wants a flag
                      {Send State.commonPort pair(ID F)}
                      {SendToAll sayFlagTaken(ID F)}
                      {Send WindowPort removeFlag(F)}
