@@ -94,7 +94,7 @@ in
                    {Send Port move(ID Position)}
                    if {Member
                        {List.nth {List.nth Input.map Position.x} Position.y}
-                       [0 (ID.id+1) mod 2)+1} then
+                       [0 (((ID.id+1) mod 2)+1)]} then
                       skip
                    else
                       {Main Port ID State} % invalid move, goto start of loop
@@ -118,6 +118,24 @@ in
 			%%%% #6 : ask the player if he wants to use one of his weapons %%%%
 			%{Send Port fireItem(ID Kind)} TODO PATCH
 
+                   % WEAPONS
+                   % get what player want to use as a weapon
+                   %{Send Port fireItem(ID Kind)}
+                   % if player can use that weapon then do
+                   if false then %{CanUse ID Kind} then
+                   %    notify all player uses the weapon
+                      {SendToAll sayCharge(ID Kind)}
+                      if Kind == gun then
+                         {SendToAll sayShoot(ID Position)}
+                      elseif Kind == mine then
+                         {SendToAll sayMinePlaced(ID Kind)}
+                      else
+                         skip
+                      end
+                   %    reset charge counter for weapon
+                   %    if mine exploded: notify all; apply damage
+                   %    if player shot then do: notify all
+                   end
 
          %{SimulatedThinking}
 
@@ -127,14 +145,15 @@ in
             {Send Port dropFlag(ID Flag)}
             if Flag == null then   % the player wants to drop the flag
                {Send State.commonPort unlinkFlag(ID)}
+               {SendToAll sayFlagDropped(ID Flag)}
             else
                NewFlag = flag(pos:Position color:OldFlag.color)
                {Send State.commonPort moveFlag(OldFlag NewFlag)}
                {Send WindowPort removeFlag(OldFlag)}
                {Send WindowPort putFlag(NewFlag)}
+               % no send to all for carrying the flag needed
             end
          else                      % the player has no flag
-%            {System.show have_no_flag}
             {Send State.commonPort getFlags(Flags)}
             F = {GetFlag Flags Position}
             if F \= nil then
@@ -142,7 +161,7 @@ in
                   skip
                else       % is there a flag
                   {Send Port takeFlag(ID Flag)}
-                  if Flag \= null then % the player wants a flag
+                  if Flag \= null then % the player wants the flag
                      {Send State.commonPort pair(ID F)}
                      {SendToAll sayFlagTaken(ID F)}
                      {Send WindowPort removeFlag(F)}
