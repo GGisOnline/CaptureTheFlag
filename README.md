@@ -1,5 +1,5 @@
-# LINFO1131_Local
-Project for LINFO1131 : Paradigmes de programmation concurrente course made by LECHAT Jérôme (50351800) and .
+# LINFO1131
+Project for LINFO1131 : Paradigmes de programmation concurrente course made by LECHAT Jérôme (50351800) and NESTEROV Andrei (41660200).
 
 
 ## Introduction
@@ -39,16 +39,11 @@ This project contains :
 
     • PlayerManager.oz : File to make the selection of player easier
 
-    • Players : - Player0001Random.oz : Player with a random behaviour
-                - Player001Smarter.oz : Player with a smart behaviour
+    • Players : - Player017Random.oz : Player with a random behaviour
+                - Player017Smarter.oz : Player with a smart behaviour
     
     • Papers : - CaptureTheFlag.pdf : Instruction for the project
                - RapportCTF.pdf : Final rapport of the project
-
-
-## Instructions 
-
-    TODO
  
 
 

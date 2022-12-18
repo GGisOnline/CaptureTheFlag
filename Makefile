@@ -1,8 +1,8 @@
 # ----------------------------
 # TODO: Fill your group number, your NOMAs and your names
-# group number X
-# NOMA1 : NAME1
-# NOMA2 : NAME2 
+# group number 17
+# 50351800 : LECHAT Jérôme
+# 41660200 : NESTEROV Andreï
 # ----------------------------
 
 UNAME_S := $(shell uname -s)
@@ -18,8 +18,8 @@ endif
 INPUT = "Input.oz"
 #PLAYER1 = "PlayerBasic.oz"
 #PLAYER2 = "PlayerBasic.oz"
-PLAYER1 = "Player001Random.oz"
-PLAYER2 = "Player001Random.oz"
+PLAYER1 = "Player017Random.oz"
+PLAYER2 = "Player017Random.oz"
 
 all:
 	$(OZC) -c ${INPUT} -o "Input.ozf"
