@@ -91,16 +91,16 @@ in
 			%{SimulatedThinking}
 
 			%%%% #2/#3 : ask where the player wants to move %%%%
-                   {Send Port move(ID Position)}
-                   if {Member
-                       {List.nth {List.nth Input.map Position.x} Position.y}
-                       [0 (((ID.id+1) mod 2)+1)]} then
-                      skip
-                   else
-                      {Main Port ID State} % invalid move, goto start of loop
-                   end
-                   {SendToAll sayMoved(ID Position)}
-                   {Send WindowPort moveSoldier(ID Position)}
+         {Send Port move(ID Position)}
+         if {Member
+            {List.nth {List.nth Input.map Position.x} Position.y}
+            [0 (((ID.id+1) mod 2)+1)]} then
+               skip
+         else
+            {Main Port ID State} % invalid move, goto start of loop
+         end
+         {SendToAll sayMoved(ID Position)}
+         {Send WindowPort moveSoldier(ID Position)}
 
 
 			%%%% #4 : TODO
@@ -117,25 +117,24 @@ in
 
 			%%%% #6 : ask the player if he wants to use one of his weapons %%%%
 			%{Send Port fireItem(ID Kind)} TODO PATCH
-
-                   % WEAPONS
-                   % get what player want to use as a weapon
-                   %{Send Port fireItem(ID Kind)}
-                   % if player can use that weapon then do
-                   if false then %{CanUse ID Kind} then
-                   %    notify all player uses the weapon
-                      {SendToAll sayCharge(ID Kind)}
-                      if Kind == gun then
-                         {SendToAll sayShoot(ID Position)}
-                      elseif Kind == mine then
-                         {SendToAll sayMinePlaced(ID Kind)}
-                      else
-                         skip
-                      end
-                   %    reset charge counter for weapon
-                   %    if mine exploded: notify all; apply damage
-                   %    if player shot then do: notify all
-                   end
+         % get what player want to use as a weapon
+         %{Send Port fireItem(ID Kind)}
+         % if player can use that weapon then do
+         if false then %{CanUse ID Kind} then
+            %    notify all player uses the weapon
+            {SendToAll sayCharge(ID Kind)}
+            if Kind == gun then
+               {SendToAll sayShoot(ID Position)}
+            elseif Kind == mine then
+               {SendToAll sayMinePlaced(ID Kind)}
+            else
+               skip
+            end
+                   
+            %    reset charge counter for weapon       
+            %    if mine exploded: notify all; apply damage
+            %    if player shot then do: notify all
+         end
 
          %{SimulatedThinking}
 
